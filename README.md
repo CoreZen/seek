@@ -40,12 +40,16 @@ cargo install seek
 
 **Option 1: Using Homebrew**
 ```bash
-brew install seek
+# Add my tap
+brew tap CoreZen/tap
+
+# Install seek
+brew install CoreZen/tap/seek
 ```
 
 **Option 2: Manual Installation**
 ```bash
-git clone https://github.com/yourusername/seek.git
+git clone https://github.com/CoreZen/seek.git
 cd seek
 cargo build --release
 sudo cp target/release/seek /usr/local/bin/
@@ -60,7 +64,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source $HOME/.cargo/env
 
 # Clone and build Seek
-git clone https://github.com/yourusername/seek.git
+git clone https://github.com/CoreZen/seek.git
 cd seek
 cargo build --release
 sudo cp target/release/seek /usr/local/bin/
@@ -73,7 +77,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source $HOME/.cargo/env
 
 # Clone and build Seek
-git clone https://github.com/yourusername/seek.git
+git clone https://github.com/CoreZen/seek.git
 cd seek
 cargo build --release
 sudo cp target/release/seek /usr/local/bin/
@@ -85,7 +89,7 @@ sudo cp target/release/seek /usr/local/bin/
 sudo pacman -S rust
 
 # Clone and build Seek
-git clone https://github.com/yourusername/seek.git
+git clone https://github.com/CoreZen/seek.git
 cd seek
 cargo build --release
 sudo cp target/release/seek /usr/local/bin/
@@ -101,7 +105,7 @@ cargo install seek
 **Option 2: Manual Installation**
 ```powershell
 # Clone the repository
-git clone https://github.com/yourusername/seek.git
+git clone https://github.com/CoreZen/seek.git
 cd seek
 
 # Build the release binary
