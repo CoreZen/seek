@@ -28,11 +28,13 @@ A blazingly fast file search utility written in Rust with a friendly, animated i
 
 ### Using Cargo (All Platforms)
 
-If you have Rust installed, the easiest way to install Seek is via Cargo:
+If you have Rust installed, you can install Seek via Cargo directly from GitHub:
 
 ```bash
-cargo install seek
+cargo install --git https://github.com/CoreZen/seek.git
 ```
+
+Note: This project is not yet published on crates.io.
 
 ### Platform-Specific Installation
 
@@ -99,7 +101,7 @@ sudo cp target/release/seek /usr/local/bin/
 
 **Option 1: Using Cargo**
 ```powershell
-cargo install seek
+cargo install --git https://github.com/CoreZen/seek.git
 ```
 
 **Option 2: Manual Installation**
