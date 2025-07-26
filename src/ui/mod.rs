@@ -16,6 +16,12 @@ pub struct DisplayManager {
     max_files: usize,
 }
 
+impl Default for DisplayManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DisplayManager {
     /// Create a new display manager with a spinner
     pub fn new() -> Self {
@@ -88,8 +94,7 @@ impl DisplayManager {
                         StatusMessage::LimitReached(limit) => {
                             limit_reached = true;
                             self.spinner.set_message(format!(
-                                "File limit reached ({})! Finishing search...",
-                                limit
+                                "File limit reached ({limit})! Finishing search..."
                             ));
                         }
                         StatusMessage::Done => {
@@ -190,7 +195,7 @@ impl DisplayManager {
         };
 
         let count_msg = if self.file_count > 0 {
-            format!("{} scanned", self.file_count)
+            format!("{} scanned", self.file_count) // Keep as is - needs the space
         } else {
             "searching".to_string()
         };
@@ -203,7 +208,11 @@ impl DisplayManager {
 
         self.spinner.set_message(format!(
             "Searching in: {} ({}{}{}{})",
-            self.current_path, count_msg, found_msg, permission_msg, remaining
+            self.current_path,
+            count_msg,
+            found_msg,
+            permission_msg,
+            remaining // Keep formatting
         ));
     }
 

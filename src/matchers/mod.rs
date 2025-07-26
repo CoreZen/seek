@@ -60,12 +60,12 @@ pub fn create_matcher(pattern: &str, use_regex: bool) -> Result<Box<dyn EntryMat
     if use_regex {
         match RegexEntryMatcher::new(pattern) {
             Ok(m) => Ok(Box::new(m)),
-            Err(e) => Err(format!("Invalid regex pattern: {}", e)),
+            Err(e) => Err(format!("Invalid regex pattern: {e}")),
         }
     } else {
         match GlobEntryMatcher::new(pattern) {
             Ok(m) => Ok(Box::new(m)),
-            Err(e) => Err(format!("Invalid glob pattern: {}", e)),
+            Err(e) => Err(format!("Invalid glob pattern: {e}")),
         }
     }
 }

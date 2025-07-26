@@ -41,6 +41,7 @@ pub struct Searcher {
 }
 
 impl Searcher {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         matcher: Box<dyn EntryMatcher>,
         base_path: PathBuf,
@@ -220,8 +221,7 @@ impl Searcher {
                     // Update the counter periodically
                     if match_count % 10 == 0 {
                         let _ = status_tx.send(StatusMessage::CurrentPath(format!(
-                            "Found {} matches so far...",
-                            match_count
+                            "Found {match_count} matches so far..."
                         )));
                     }
                 }
@@ -264,7 +264,7 @@ impl Searcher {
             );
             println!(
                 "      {}",
-                format!("sudo seek \"{}\" \"{}\"", path, pattern).yellow()
+                format!("sudo seek \"{path}\" \"{pattern}\"").yellow()
             );
 
             if cfg!(target_os = "macos") {
