@@ -308,6 +308,39 @@ Search complete! Found 24 matches in /etc (2.3s, 1542 files, 8 permission errors
 - Try searching with broader patterns first, then narrow down
 - Use `-p` flag to search in full paths, not just filenames
 
+## Development
+
+### GitHub Actions Workflows
+
+This project uses GitHub Actions for automation:
+
+1. **CI Workflow**: Runs on every push and pull request to main
+   - Tests the code on Ubuntu, macOS, and Windows
+   - Runs clippy and formatting checks
+   - Ensures the project builds correctly
+
+2. **Release Workflow**: Triggered when a new tag is pushed
+   - Builds binaries for:
+     - Linux (x86_64 and ARM64)
+     - macOS (Intel, Apple Silicon, and Universal)
+     - Windows (x86_64)
+   - Creates a GitHub release with all the binaries
+   - Generates SHA256 checksums for verification
+
+3. **Homebrew Update Workflow**: Runs when a new release is published
+   - Automatically updates the Homebrew formula in CoreZen/homebrew-tap
+   - Updates the version, URL, and SHA256 checksum
+
+### Making a New Release
+
+To create a new release:
+
+1. Update the version in `Cargo.toml`
+2. Commit your changes: `git commit -am "Bump version to x.y.z"`
+3. Tag the commit: `git tag -a vx.y.z -m "Version x.y.z"`
+4. Push the changes and tags: `git push && git push --tags`
+5. The GitHub Actions workflows will handle the rest!
+
 ## License
 
 MIT

@@ -1,0 +1,178 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: seek
+            asset_name: seek-linux-amd64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            artifact_name: seek
+            asset_name: seek-linux-arm64
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact_name: seek
+            asset_name: seek-macos-x86_64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact_name: seek
+            asset_name: seek-macos-arm64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: seek.exe
+            asset_name: seek-windows-amd64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install cross-compilation tools (Linux ARM64)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Build binary
+        run: cargo build --release --target ${{ matrix.target }}
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.asset_name }}
+          path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+          if-no-files-found: error
+
+  create_universal_macos:
+    name: Create Universal macOS binary
+    needs: build
+    runs-on: macos-latest
+    steps:
+      - name: Download x86_64 macOS binary
+        uses: actions/download-artifact@v3
+        with:
+          name: seek-macos-x86_64
+          path: macos-binaries
+
+      - name: Download arm64 macOS binary
+        uses: actions/download-artifact@v3
+        with:
+          name: seek-macos-arm64
+          path: macos-binaries
+
+      - name: Create universal binary
+        run: |
+          chmod +x macos-binaries/seek
+          lipo -create -output seek-macos-universal macos-binaries/seek
+
+      - name: Upload universal binary artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: seek-macos-universal
+          path: seek-macos-universal
+          if-no-files-found: error
+
+  release:
+    name: Create GitHub Release
+    needs: [build, create_universal_macos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Create release assets
+        run: |
+          mkdir release-assets
+
+          # Linux x86_64
+          cp seek-linux-amd64/seek release-assets/
+          chmod +x release-assets/seek
+          cd release-assets
+          tar -czf ../seek-linux-amd64.tar.gz seek
+          cd ..
+          rm release-assets/seek
+
+          # Linux ARM64
+          cp seek-linux-arm64/seek release-assets/
+          chmod +x release-assets/seek
+          cd release-assets
+          tar -czf ../seek-linux-arm64.tar.gz seek
+          cd ..
+          rm release-assets/seek
+
+          # macOS Universal
+          cp seek-macos-universal/seek-macos-universal release-assets/seek
+          chmod +x release-assets/seek
+          cd release-assets
+          tar -czf ../seek-macos-universal.tar.gz seek
+          cd ..
+          rm release-assets/seek
+
+          # macOS x86_64
+          cp seek-macos-x86_64/seek release-assets/
+          chmod +x release-assets/seek
+          cd release-assets
+          tar -czf ../seek-macos-x86_64.tar.gz seek
+          cd ..
+          rm release-assets/seek
+
+          # macOS ARM64
+          cp seek-macos-arm64/seek release-assets/
+          chmod +x release-assets/seek
+          cd release-assets
+          tar -czf ../seek-macos-arm64.tar.gz seek
+          cd ..
+          rm release-assets/seek
+
+          # Windows x86_64
+          cp seek-windows-amd64/seek.exe release-assets/
+          cd release-assets
+          zip -r ../seek-windows-amd64.zip seek.exe
+          cd ..
+          rm release-assets/seek.exe
+
+      - name: Generate SHA256 checksums
+        run: |
+          cd $GITHUB_WORKSPACE
+          sha256sum seek-linux-amd64.tar.gz seek-linux-arm64.tar.gz seek-macos-universal.tar.gz seek-macos-x86_64.tar.gz seek-macos-arm64.tar.gz seek-windows-amd64.zip > SHA256SUMS
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            seek-linux-amd64.tar.gz
+            seek-linux-arm64.tar.gz
+            seek-macos-universal.tar.gz
+            seek-macos-x86_64.tar.gz
+            seek-macos-arm64.tar.gz
+            seek-windows-amd64.zip
+            SHA256SUMS
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

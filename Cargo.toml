@@ -2,6 +2,13 @@
 name = "seek"
 version = "0.1.0"
 edition = "2024"
+authors = ["CoreZen"]
+description = "A blazingly fast file search utility with a friendly, animated interface"
+repository = "https://github.com/CoreZen/seek"
+license = "MIT"
+keywords = ["search", "find", "file", "utility", "cli"]
+categories = ["command-line-utilities", "filesystem"]
+readme = "README.md"
 
 [dependencies]
 clap = { version = "4.5", features = ["derive"] }

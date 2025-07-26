@@ -1,0 +1,92 @@
+name: Update Homebrew Formula
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  update-homebrew-formula:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout homebrew-tap
+        uses: actions/checkout@v3
+        with:
+          repository: CoreZen/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+
+      - name: Get release info
+        id: release_info
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const release = await github.rest.repos.getRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: context.payload.release.id
+            });
+
+            const version = release.data.tag_name.replace(/^v/, '');
+
+            // Find the universal macOS tarball
+            const macosAsset = release.data.assets.find(asset => asset.name.includes('macos-universal.tar.gz'));
+            if (!macosAsset) {
+              throw new Error('Could not find macOS universal tarball');
+            }
+
+            // Get the SHA256 checksum
+            const checksumAsset = release.data.assets.find(asset => asset.name === 'SHA256SUMS');
+            if (!checksumAsset) {
+              throw new Error('Could not find SHA256SUMS file');
+            }
+
+            const checksumResponse = await github.request(checksumAsset.browser_download_url);
+            const checksums = Buffer.from(checksumResponse.data).toString('utf8');
+            const checksumLines = checksums.split('\n');
+            const macosLine = checksumLines.find(line => line.includes('macos-universal.tar.gz'));
+            if (!macosLine) {
+              throw new Error('Could not find macOS universal checksum');
+            }
+
+            const sha256 = macosLine.split(' ')[0];
+
+            core.setOutput('version', version);
+            core.setOutput('sha256', sha256);
+            core.setOutput('url', macosAsset.browser_download_url);
+
+      - name: Update formula
+        run: |
+          cd homebrew-tap
+          cat > seek.rb << EOL
+          class Seek < Formula
+            desc "Blazingly fast file search utility with a friendly, animated interface"
+            homepage "https://github.com/CoreZen/seek"
+            url "${{ steps.release_info.outputs.url }}"
+            sha256 "${{ steps.release_info.outputs.sha256 }}"
+            version "${{ steps.release_info.outputs.version }}"
+            license "MIT"
+
+            def install
+              bin.install "seek"
+            end
+
+            test do
+              # Test that the binary runs and returns expected output
+              assert_match "seek", shell_output("#{bin}/seek --help")
+
+              # Create a test file structure and search for it
+              (testpath/"test_dir").mkpath
+              (testpath/"test_dir/findme.txt").write("test content")
+              assert_match "findme.txt", shell_output("#{bin}/seek #{testpath}/test_dir '*.txt'")
+            end
+          end
+          EOL
+
+      - name: Commit and push
+        run: |
+          cd homebrew-tap
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add seek.rb
+          git commit -m "Update seek to ${{ steps.release_info.outputs.version }}"
+          git push
