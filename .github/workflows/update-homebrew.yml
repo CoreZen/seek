@@ -4,9 +4,14 @@ on:
   release:
     types: [published]
 
+permissions:
+  contents: write
+
 jobs:
   update-homebrew-formula:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout homebrew-tap
         uses: actions/checkout@v4
