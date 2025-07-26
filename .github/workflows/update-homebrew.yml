@@ -31,36 +31,37 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            let release;
+            let releaseData;
             if (context.payload.release) {
               // Triggered by release
-              release = await github.rest.repos.getRelease({
+              const release = await github.rest.repos.getRelease({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 release_id: context.payload.release.id
               });
+              releaseData = release.data;
             } else {
               // Triggered manually
               const releases = await github.rest.repos.listReleases({
                 owner: context.repo.owner,
                 repo: context.repo.repo
               });
-              release = releases.data.find(r => r.tag_name === `v${context.payload.inputs.version}`);
-              if (!release) {
+              releaseData = releases.data.find(r => r.tag_name === `v${context.payload.inputs.version}`);
+              if (!releaseData) {
                 throw new Error(`Release v${context.payload.inputs.version} not found`);
               }
             }
 
-            const version = release.data.tag_name.replace(/^v/, '');
+            const version = releaseData.tag_name.replace(/^v/, '');
 
             // Find the universal macOS tarball
-            const macosAsset = release.data.assets.find(asset => asset.name.includes('macos-universal.tar.gz'));
+            const macosAsset = releaseData.assets.find(asset => asset.name.includes('macos-universal.tar.gz'));
             if (!macosAsset) {
               throw new Error('Could not find macOS universal tarball');
             }
 
             // Get the SHA256 checksum
-            const checksumAsset = release.data.assets.find(asset => asset.name === 'SHA256SUMS');
+            const checksumAsset = releaseData.assets.find(asset => asset.name === 'SHA256SUMS');
             if (!checksumAsset) {
               throw new Error('Could not find SHA256SUMS file');
             }
