@@ -3,7 +3,7 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   build:
@@ -36,7 +36,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -55,7 +55,7 @@ jobs:
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.asset_name }}
           path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
@@ -67,27 +67,29 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Download x86_64 macOS binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: seek-macos-x86_64
-          path: macos-binaries
+          path: macos-binaries/x86_64
 
       - name: Download arm64 macOS binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: seek-macos-arm64
-          path: macos-binaries
+          path: macos-binaries/arm64
 
       - name: Create universal binary
         run: |
-          chmod +x macos-binaries/seek
-          lipo -create -output seek-macos-universal macos-binaries/seek
+          mkdir -p macos-universal
+          lipo -create -output macos-universal/seek \
+            macos-binaries/x86_64/seek \
+            macos-binaries/arm64/seek
 
       - name: Upload universal binary artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: seek-macos-universal
-          path: seek-macos-universal
+          path: macos-universal/seek
           if-no-files-found: error
 
   release:
@@ -96,21 +98,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Get version from tag
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
 
       - name: Create release assets
         run: |
-          mkdir release-assets
+          mkdir -p release-assets
 
           # Linux x86_64
-          cp seek-linux-amd64/seek release-assets/
+          cp artifacts/seek-linux-amd64/seek release-assets/
           chmod +x release-assets/seek
           cd release-assets
           tar -czf ../seek-linux-amd64.tar.gz seek
@@ -118,7 +122,7 @@ jobs:
           rm release-assets/seek
 
           # Linux ARM64
-          cp seek-linux-arm64/seek release-assets/
+          cp artifacts/seek-linux-arm64/seek release-assets/
           chmod +x release-assets/seek
           cd release-assets
           tar -czf ../seek-linux-arm64.tar.gz seek
@@ -126,7 +130,7 @@ jobs:
           rm release-assets/seek
 
           # macOS Universal
-          cp seek-macos-universal/seek-macos-universal release-assets/seek
+          cp artifacts/seek-macos-universal/seek release-assets/
           chmod +x release-assets/seek
           cd release-assets
           tar -czf ../seek-macos-universal.tar.gz seek
@@ -134,7 +138,7 @@ jobs:
           rm release-assets/seek
 
           # macOS x86_64
-          cp seek-macos-x86_64/seek release-assets/
+          cp artifacts/seek-macos-x86_64/seek release-assets/
           chmod +x release-assets/seek
           cd release-assets
           tar -czf ../seek-macos-x86_64.tar.gz seek
@@ -142,7 +146,7 @@ jobs:
           rm release-assets/seek
 
           # macOS ARM64
-          cp seek-macos-arm64/seek release-assets/
+          cp artifacts/seek-macos-arm64/seek release-assets/
           chmod +x release-assets/seek
           cd release-assets
           tar -czf ../seek-macos-arm64.tar.gz seek
@@ -150,7 +154,7 @@ jobs:
           rm release-assets/seek
 
           # Windows x86_64
-          cp seek-windows-amd64/seek.exe release-assets/
+          cp artifacts/seek-windows-amd64/seek.exe release-assets/
           cd release-assets
           zip -r ../seek-windows-amd64.zip seek.exe
           cd ..
@@ -162,7 +166,7 @@ jobs:
           sha256sum seek-linux-amd64.tar.gz seek-linux-arm64.tar.gz seek-macos-universal.tar.gz seek-macos-x86_64.tar.gz seek-macos-arm64.tar.gz seek-windows-amd64.zip > SHA256SUMS
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             seek-linux-amd64.tar.gz
