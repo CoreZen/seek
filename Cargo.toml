@@ -1,6 +1,6 @@
 [package]
 name = "seek"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 authors = ["CoreZen"]
 description = "A blazingly fast file search utility with a friendly, animated interface"
