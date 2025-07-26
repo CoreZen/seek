@@ -17,7 +17,7 @@ fn main() {
     let matcher = match matchers::create_matcher(&pattern, args.regex) {
         Ok(m) => m,
         Err(e) => {
-            eprintln!("Error: {}", e);
+            eprintln!("Error: {e}");
             process::exit(1);
         }
     };
