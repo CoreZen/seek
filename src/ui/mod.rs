@@ -1,6 +1,6 @@
 use colored::*;
 use indicatif::{ProgressBar, ProgressStyle};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::mpsc::{Receiver, TryRecvError};
 use std::time::Duration;
 
@@ -208,7 +208,7 @@ impl DisplayManager {
     }
 
     /// Complete the search and show final results
-    pub fn finish(&self, result: &SearchResult, base_path: &PathBuf) {
+    pub fn finish(&self, result: &SearchResult, base_path: &Path) {
         // Calculate elapsed time (ensure it's never zero to avoid confusion)
         let elapsed = if result.elapsed.as_secs_f64() < 0.1 {
             std::time::Duration::from_millis(100) // Minimum display time of 0.1s
